@@ -1,0 +1,23 @@
+[DEFAULT]
+default-targets:     bsim_dut
+bsc-compile-options: -aggressive-conditions -keep-fires
+bsc-link-options:    -keep-fires
+
+[common]
+hide-target
+bsv-source-directories:  ../src
+verilog-directory:     vlog_dut
+binary-directory:      bdir_dut
+simulation-directory:  simdir_dut
+info-directory:        info_dut
+top-module:            mkTb
+top-file:              ../src/Tb.bsv
+
+[dut]
+hide-target
+extends-target: common
+
+[bsim_dut]
+extends-target: dut
+build-for:      bluesim
+exe-file:       bsim_dut

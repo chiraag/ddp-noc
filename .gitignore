@@ -1,0 +1,6 @@
+sim/bdir_dut/*
+sim/bsim*
+sim/simdir_dut/*
+
+*.swp
+*~

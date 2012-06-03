@@ -2,6 +2,7 @@
 
 package Arbiter;
 
+import GetPut::*;
 import Vector::*;
 import FIFOF::*;
 import FIFO::*;
@@ -13,21 +14,19 @@ import Device::*;
 // Priority model
 
 interface Arbiter;
-//   interface Vector#(Degree, Put#(Packet)) putPacket;
-//   interface Vector#(Degree, Get#(Packet)) getPacket;
-   method Action pushPacket0(Packet inputPacket);
-   method Action pushPacket1(Packet inputPacket);
-   method Action pushPacket2(Packet inputPacket);
-   method ActionValue#(Packet) popPacket();
+   interface Vector#(Degree, Put#(Packet)) putPacket;
+   interface Get#(Packet) getPacket;
+//   method Action pushPacket0(Packet inputPacket);
+//   method Action pushPacket1(Packet inputPacket);
+//   method Action pushPacket2(Packet inputPacket);
+//   method ActionValue#(Packet) popPacket();
 endinterface
 
 (* synthesize *)
 module mkArbiter (Arbiter);
-
-   // ---- Instruction memory (modeled here using an array of registers)
-   FIFO#(Packet) outFIFO <- mkSizedFIFO(16);
-   FIFOF#(Packet) inFIFO[valueOf(Degree)+1];
-   for(Integer i =0; i <= valueOf(Degree); i = i+1) begin
+   FIFO#(Packet) outFIFO <- mkFIFO();
+   FIFOF#(Packet) inFIFO[valueOf(Degree)];
+   for(Integer i =0; i < valueOf(Degree); i = i+1) begin
       inFIFO[i]  <- mkSizedFIFOF(16);
    end
    
@@ -45,22 +44,12 @@ module mkArbiter (Arbiter);
 
    // ----------------
    // METHODS
-
-   method Action pushPacket0(Packet inputPacket);
-      inFIFO[0].enq(inputPacket);
-   endmethod
-
-   method Action pushPacket1(Packet inputPacket);
-      inFIFO[1].enq(inputPacket);
-   endmethod
-
-   method Action pushPacket2(Packet inputPacket);
-      inFIFO[2].enq(inputPacket);
-   endmethod
-   
-   method ActionValue#(Packet) popPacket();
-      outFIFO.deq(); return outFIFO.first();
-   endmethod
+   Vector#(Degree, Put#(Packet)) putPacketI;
+   for (Integer i=0; i<valueOf(Degree); i=i+1) begin
+      putPacketI[i] = toPut(inFIFO[i]);
+   end 
+   interface putPacket = putPacketI;
+   interface getPacket = toGet(outFIFO);
 
 endmodule: mkArbiter
 

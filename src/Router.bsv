@@ -2,8 +2,8 @@
 
 package Router;
 
+import GetPut::*;
 import Vector::*;
-import FIFOF::*;
 import FIFO::*;
 
 import NoCTypes::*;
@@ -18,68 +18,56 @@ DecodedAddr decodeTable[7] = { 7'b0000001, 7'b0000010, 7'b0000100, 7'b0001000, 7
 // Priority model
 
 interface Router;
-   method Action pushPacket(Packet inputPacket);
-   method ActionValue#(Packet) arbiter0popPacket();
-   method ActionValue#(Packet) arbiter1popPacket();
-   method ActionValue#(Packet) arbiter2popPacket();
+  interface Put#(Packet) putPacket;
+  interface Vector#(Degree, Get#(Packet)) getPacket;
 endinterface
 
 (* synthesize *)
 module mkRouter #(Address thisAddr, RouterType thisType) (Router);
 
    // ---- Instruction memory (modeled here using an array of registers)
-   FIFO#(Packet) toRouterFIFO <- mkFIFO();
-   FIFO#(Packet) toArbiterFIFO[valueOf(Degree)];
+   FIFO#(Packet) inFIFO <- mkFIFO();
+   FIFO#(Packet) outFIFO[valueOf(Degree)];
    for(Integer i =0; i < valueOf(Degree); i=i+1) begin
-      toArbiterFIFO[i]  <- mkFIFO();
+      outFIFO[i]  <- mkFIFO();
    end
    
    // ----------------
    // RULES
    rule routeOutgoing;
-      let currPacket = toRouterFIFO.first();
-      toRouterFIFO.deq();
+      let currPacket = inFIFO.first();
+      inFIFO.deq();
       Address distance = (7 + currPacket.destAddress - thisAddr) % 7;
       DecodedAddr toAddr = decodeTable[distance];
       DecodedAddr pattern = 7'b0001011;            
       
       if(thisType == Point) begin
         if((toAddr & 7'b1010000) != 0) begin
-          toArbiterFIFO[0].enq(currPacket);
+          outFIFO[0].enq(currPacket);
         end else if((toAddr & 7'b0100010) != 0) begin
-          toArbiterFIFO[1].enq(currPacket);
+          outFIFO[1].enq(currPacket);
         end else if((toAddr & 7'b0001100) != 0) begin
-          toArbiterFIFO[2].enq(currPacket);
+          outFIFO[2].enq(currPacket);
         end
       end else if(thisType == Line) begin
         if(toAddr == 7'b0000001) begin
-          toArbiterFIFO[0].enq(currPacket);
+          outFIFO[0].enq(currPacket);
         end else if(toAddr == 7'b1000000) begin
-          toArbiterFIFO[1].enq(currPacket);
+          outFIFO[1].enq(currPacket);
         end else if(toAddr ==  7'b0010000) begin
-          toArbiterFIFO[2].enq(currPacket);
+          outFIFO[2].enq(currPacket);
         end
       end
    endrule
 
    // ----------------
    // METHODS
-
-   method Action pushPacket(Packet inputPacket);
-      toRouterFIFO.enq(inputPacket);
-   endmethod
-   
-   method ActionValue#(Packet) arbiter0popPacket();
-      toArbiterFIFO[0].deq(); return toArbiterFIFO[0].first();
-   endmethod
-
-   method ActionValue#(Packet) arbiter1popPacket();
-      toArbiterFIFO[1].deq(); return toArbiterFIFO[1].first();
-   endmethod
-
-   method ActionValue#(Packet) arbiter2popPacket();
-      toArbiterFIFO[2].deq(); return toArbiterFIFO[2].first();
-   endmethod
+   Vector#(Degree, Get#(Packet)) getPacketI;
+   for (Integer i=0; i<valueOf(Degree); i=i+1) begin
+      getPacketI[i] = toGet(outFIFO[i]);
+   end 
+   interface getPacket = getPacketI;
+   interface putPacket = toPut(inFIFO);
 
 endmodule: mkRouter
 

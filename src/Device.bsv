@@ -2,7 +2,9 @@
 
 package Device;
 
-import FIFOF::*;
+import GetPut::*;
+import Vector::*;
+import FIFO::*;
 
 import NoCTypes::*;
 
@@ -31,16 +33,16 @@ UInt#(32) arrSize = 4;
 // Device model
 
 interface Device;
-   method Action pushPacket (Packet inPacket);
-   method ActionValue#(Packet) popPacket();
+   interface Put#(Packet) putPacket;
+   interface Get#(Packet) getPacket;
 endinterface
 
 (* synthesize *)
 module mkDevice #(Address thisAddr) (Device);
 
    // ---- Instruction memory (modeled here using an array of registers)
-   FIFOF#(Packet) inFIFO  <- mkSizedFIFOF(16);
-   FIFOF#(Packet) outFIFO <- mkSizedFIFOF(16);
+   FIFO#(Packet) inFIFO  <- mkSizedFIFO(16);
+   FIFO#(Packet) outFIFO <- mkSizedFIFO(16);
 
    Reg#(UInt#(32)) ldIndex <- mkReg (0);
 
@@ -55,15 +57,8 @@ module mkDevice #(Address thisAddr) (Device);
 
    // ----------------
    // METHODS
-
-   method Action pushPacket (Packet inPacket);
-      $display ("Device %0d got (%0d %08x)", thisAddr, inPacket.destAddress, inPacket.payloadData);      
-      inFIFO.enq(inPacket);
-   endmethod
-
-   method ActionValue#(Packet) popPacket();
-      outFIFO.deq; return outFIFO.first;
-   endmethod
+   interface putPacket = toPut(inFIFO);
+   interface getPacket = toGet(outFIFO);
 
 endmodule: mkDevice
 

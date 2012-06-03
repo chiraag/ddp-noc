@@ -4,19 +4,12 @@ package Tb;
 import Connectable::*;
 import GetPut::*;
 
+import NoCTypes::*;
 import Device::*;
 import Node::*;
 import Vector::*;
 import FIFO::*;
 import Router::*;
-
-typedef 3 Degree;
-typedef 7 TotalNodes;
-
-Integer incidence[3] = {
-  0, 1, 3
-};
-
 
 // ----------------------------------------------------------------
 // The testbench
@@ -28,8 +21,8 @@ module mkTb (Empty);
    Node nodeL[valueOf(TotalNodes)];
    
    for(Address i = 0; i < fromInteger(valueOf(TotalNodes)); i = i+1) begin
-      nodeP[i] <- mkNode(i, Point);
-      nodeL[i] <- mkNode(i, Line);
+      nodeP[i] <- mkNodeP(i);
+      nodeL[i] <- mkNodeL(i);
    end
    
    for(Integer i = 0; i < valueOf(TotalNodes); i = i+1) begin

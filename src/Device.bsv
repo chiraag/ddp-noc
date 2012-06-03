@@ -4,6 +4,8 @@ package Device;
 
 import FIFOF::*;
 
+import NoCTypes::*;
+
 // ----------------------------------------------------------------
 // Basic Type Definitions
 typedef 4  AddressWidth;
@@ -23,7 +25,6 @@ Packet ldData[4] = {
   Packet{destAddress: 2, payloadData: 32'h00001000}
   };
 
-Address totalNodes = 7;
 UInt#(32) arrSize = 4;
 
 // ----------------------------------------------------------------
@@ -47,7 +48,7 @@ module mkDevice #(Address thisAddr) (Device);
    // RULES
    rule setupDevice (ldIndex < arrSize);
       let outPacket = ldData[ldIndex];
-      outPacket.destAddress = (outPacket.destAddress + thisAddr) % totalNodes;
+      outPacket.destAddress = (outPacket.destAddress + thisAddr) % fromInteger(valueOf(TotalNodes));
       outFIFO.enq(outPacket);
       ldIndex <= ldIndex + 1;
    endrule

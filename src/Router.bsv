@@ -5,9 +5,10 @@ package Router;
 import Vector::*;
 import FIFOF::*;
 import FIFO::*;
+
+import NoCTypes::*;
 import Device::*;
 
-typedef 3 Degree;
 typedef Bit#(7) DecodedAddr;
 typedef enum {Point, Line} RouterType deriving (Eq, Bits);
 
@@ -21,7 +22,6 @@ interface Router;
    method ActionValue#(Packet) arbiter0popPacket();
    method ActionValue#(Packet) arbiter1popPacket();
    method ActionValue#(Packet) arbiter2popPacket();
-   method ActionValue#(Packet) nodepopPacket();
 endinterface
 
 (* synthesize *)
@@ -29,8 +29,6 @@ module mkRouter #(Address thisAddr, RouterType thisType) (Router);
 
    // ---- Instruction memory (modeled here using an array of registers)
    FIFO#(Packet) toRouterFIFO <- mkFIFO();
-
-   FIFO#(Packet) toNodeFIFO <- mkFIFO();
    FIFO#(Packet) toArbiterFIFO[valueOf(Degree)];
    for(Integer i =0; i < valueOf(Degree); i=i+1) begin
       toArbiterFIFO[i]  <- mkFIFO();
@@ -46,9 +44,7 @@ module mkRouter #(Address thisAddr, RouterType thisType) (Router);
       DecodedAddr pattern = 7'b0001011;            
       
       if(thisType == Point) begin
-        if(toAddr == 7'b0000001) begin
-          toNodeFIFO.enq(currPacket);
-        end else if((toAddr & 7'b1010000) != 0) begin
+        if((toAddr & 7'b1010000) != 0) begin
           toArbiterFIFO[0].enq(currPacket);
         end else if((toAddr & 7'b0100010) != 0) begin
           toArbiterFIFO[1].enq(currPacket);
@@ -83,10 +79,6 @@ module mkRouter #(Address thisAddr, RouterType thisType) (Router);
 
    method ActionValue#(Packet) arbiter2popPacket();
       toArbiterFIFO[2].deq(); return toArbiterFIFO[2].first();
-   endmethod
-
-   method ActionValue#(Packet) nodepopPacket();
-      toNodeFIFO.deq(); return toNodeFIFO.first();
    endmethod
 
 endmodule: mkRouter

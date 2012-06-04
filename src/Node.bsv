@@ -9,7 +9,7 @@ import FIFO::*;
 
 import NoCTypes::*;
 import Device::*;
-import Arbiter::*;
+import Merger::*;
 import Router::*;
 
 // ----------------------------------------------------------------
@@ -24,12 +24,12 @@ endinterface
 module mkNodeP #(Address thisAddr) (Node);
 
    // ---- Instruction memory (modeled here using an array of registers)
-   Arbiter arbiter <- mkArbiter();
+   Merger  merger  <- mkMerger();
    Router  router  <- mkRouter(thisAddr, Point);
    Device  dev     <- mkDevice(thisAddr);
 
    mkConnection(dev.getPacket, router.putPacket);
-   mkConnection(arbiter.getPacket, dev.putPacket);
+   mkConnection(merger.getPacket, dev.putPacket);
 
    FIFO#(Packet) networkoutFIFO[valueOf(Degree)];
    FIFO#(Packet) networkinFIFO[valueOf(Degree)];
@@ -41,7 +41,7 @@ module mkNodeP #(Address thisAddr) (Node);
 
    for(Integer i = 0; i < valueOf(Degree); i = i+1) begin
      mkConnection(router.getPacket[i], toPut(networkoutFIFO[i]));
-     mkConnection(toGet(networkinFIFO[i]), arbiter.putPacket[i]);
+     mkConnection(toGet(networkinFIFO[i]), merger.putPacket[i]);
    end
 
    // ----------------
@@ -59,10 +59,10 @@ endmodule: mkNodeP
 module mkNodeL #(Address thisAddr) (Node);
 
    // ---- Instruction memory (modeled here using an array of registers)
-   Arbiter arbiter <- mkArbiter();
+   Merger  merger  <- mkMerger();
    Router  router  <- mkRouter(thisAddr, Line);
 
-   mkConnection(arbiter.getPacket, router.putPacket);
+   mkConnection(merger.getPacket, router.putPacket);
 
    FIFO#(Packet) networkoutFIFO[valueOf(Degree)];
    FIFO#(Packet) networkinFIFO[valueOf(Degree)];
@@ -74,7 +74,7 @@ module mkNodeL #(Address thisAddr) (Node);
    
    for(Integer i = 0; i < valueOf(Degree); i = i+1) begin
      mkConnection(router.getPacket[i], toPut(networkoutFIFO[i]));
-     mkConnection(toGet(networkinFIFO[i]), arbiter.putPacket[i]);
+     mkConnection(toGet(networkinFIFO[i]), merger.putPacket[i]);
    end
 
    // ----------------

@@ -1,11 +1,12 @@
 // Chiraag Juvekar - Sample Arbiter
 
-package Arbiter;
+package Merger;
 
 import GetPut::*;
 import Vector::*;
 import FIFOF::*;
 import FIFO::*;
+import Arbiter::*;
 
 import NoCTypes::*;
 import Device::*;
@@ -13,7 +14,7 @@ import Device::*;
 // ----------------------------------------------------------------
 // Priority model
 
-interface Arbiter;
+interface Merger;
    interface Vector#(Degree, Put#(Packet)) putPacket;
    interface Get#(Packet) getPacket;
 //   method Action pushPacket0(Packet inputPacket);
@@ -23,7 +24,7 @@ interface Arbiter;
 endinterface
 
 (* synthesize *)
-module mkArbiter (Arbiter);
+module mkMerger (Merger);
    FIFO#(Packet) outFIFO <- mkFIFO();
    FIFOF#(Packet) inFIFO[valueOf(Degree)];
    for(Integer i =0; i < valueOf(Degree); i = i+1) begin
@@ -32,6 +33,29 @@ module mkArbiter (Arbiter);
    
    // ----------------
    // RULES
+   // Instantiate an n-way round-robin arbiter from the BSV library
+//   Arbiter_IFC#(Degree) rrArbiter <- mkArbiter (False);
+
+//   rule rl_cycle_counter;
+//      cy <= cy + 1;
+//   endrule
+
+//   // Generate arbitration requests (based on data availability on input FIFOs)
+//   rule rl_gen_arb_reqs;
+//      for (Integer r = 0; r < valueof(n); r = r + 1)
+//         if (i_fifos [r].notEmpty) rr_arb.clients [r].request;
+//   endrule
+
+//   // Generate n rules; each rule forwards from one input FIFO to the common output FIFO
+//   for (Integer r = 0; r < valueof(n); r = r + 1) begin
+//      rule rl_r (rr_arb.clients [r].grant);    // NOTE: rule conditioned on arbiter 'grant'
+//         let x = i_fifos[r].first ();
+//         $display ("Cycle %0d: rule r[%0d] forwarded %0d", cy, r, x);
+//         i_fifos[r].deq ();
+//         o_fifo.enq (x);
+//      endrule
+//   end
+   
    rule arbitrate;
       if(inFIFO[0].notEmpty()) begin
         outFIFO.enq(inFIFO[0].first()); inFIFO[0].deq();
@@ -51,7 +75,7 @@ module mkArbiter (Arbiter);
    interface putPacket = putPacketI;
    interface getPacket = toGet(outFIFO);
 
-endmodule: mkArbiter
+endmodule: mkMerger
 
-endpackage: Arbiter
+endpackage: Merger
 

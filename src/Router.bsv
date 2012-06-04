@@ -9,10 +9,8 @@ import FIFO::*;
 import NoCTypes::*;
 import Device::*;
 
-typedef Bit#(7) DecodedAddr;
+typedef Bit#(TotalNodes) DecodedAddr;
 typedef enum {Point, Line} RouterType deriving (Eq, Bits);
-
-DecodedAddr decodeTable[7] = { 7'b0000001, 7'b0000010, 7'b0000100, 7'b0001000, 7'b0010000, 7'b0100000, 7'b1000000 };
 
 // ----------------------------------------------------------------
 // Priority model
@@ -24,7 +22,6 @@ endinterface
 
 (* synthesize *)
 module mkRouter #(Address thisAddr, RouterType thisType) (Router);
-
    // ---- Instruction memory (modeled here using an array of registers)
    FIFO#(Packet) inFIFO <- mkFIFO();
    FIFO#(Packet) outFIFO[valueOf(Degree)];
@@ -35,28 +32,31 @@ module mkRouter #(Address thisAddr, RouterType thisType) (Router);
    // ----------------
    // RULES
    rule routeOutgoing;
-      let currPacket = inFIFO.first();
-      inFIFO.deq();
-      Address distance = (7 + currPacket.destAddress - thisAddr) % 7;
-      DecodedAddr toAddr = decodeTable[distance];
-      DecodedAddr pattern = 7'b0001011;            
-      
-      if(thisType == Point) begin
-        if((toAddr & 7'b1010000) != 0) begin
-          outFIFO[0].enq(currPacket);
-        end else if((toAddr & 7'b0100010) != 0) begin
-          outFIFO[1].enq(currPacket);
-        end else if((toAddr & 7'b0001100) != 0) begin
-          outFIFO[2].enq(currPacket);
+      let currPacket = inFIFO.first(); inFIFO.deq();
+      Integer totalNodes = (valueOf(TotalNodes));
+      Address distance = ((fromInteger(totalNodes) + currPacket.destAddress - thisAddr) % fromInteger(totalNodes));
+      DecodedAddr toAddr = (1 << distance);
+
+      // (0, 6, 4) (1, 0, 5) (3, 2, 0)
+      for(Integer i=0; i<valueOf(Degree); i=i+1) begin
+        DecodedAddr pointPattern = 0;
+        for(Integer j=0; j<valueOf(Degree); j=j+1) begin
+          DecodedAddr currId = (1 << ((totalNodes - incidence[j] + incidence[i])%totalNodes) );          
+          if(currId != 1) pointPattern = pointPattern + currId;
         end
-      end else if(thisType == Line) begin
-        if(toAddr == 7'b0000001) begin
-          outFIFO[0].enq(currPacket);
-        end else if(toAddr == 7'b1000000) begin
-          outFIFO[1].enq(currPacket);
-        end else if(toAddr ==  7'b0010000) begin
-          outFIFO[2].enq(currPacket);
-        end
+        DecodedAddr linePattern = (1 << ((totalNodes - incidence[i])%totalNodes) );
+
+        if(thisType == Point) begin
+          if((toAddr & pointPattern) != 0) begin 
+            outFIFO[i].enq(currPacket);
+            $display("Point:%d Dest %d Pattern %b", thisAddr, currPacket.destAddress, pointPattern);
+          end
+        end else if(thisType == Line) begin
+          if(toAddr == linePattern) begin
+            outFIFO[i].enq(currPacket);
+            $display("Line:%d Dest %d Pattern %b", thisAddr, currPacket.destAddress, linePattern);
+          end
+        end        
       end
    endrule
 

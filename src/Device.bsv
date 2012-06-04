@@ -54,6 +54,11 @@ module mkDevice #(Address thisAddr) (Device);
       outFIFO.enq(outPacket);
       ldIndex <= ldIndex + 1;
    endrule
+   
+   rule offLoadDevice;
+      $display("Device %d, Received %x", thisAddr, inFIFO.first().payloadData);
+      inFIFO.deq();
+   endrule
 
    // ----------------
    // METHODS

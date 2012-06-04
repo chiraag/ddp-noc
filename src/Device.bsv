@@ -10,16 +10,6 @@ import NoCTypes::*;
 
 // ----------------------------------------------------------------
 // Basic Type Definitions
-typedef 4  AddressWidth;
-typedef 32 DataWidth;
-typedef UInt#(AddressWidth) Address;
-typedef Bit#(DataWidth)    Data;
-
-typedef struct {
-  Address destAddress;
-  Data    payloadData;
-  } Packet deriving(Bits);
-
 Packet ldData[4] = {
   Packet{destAddress: 3, payloadData: 32'h00000001},
   Packet{destAddress: 6, payloadData: 32'h00000010},

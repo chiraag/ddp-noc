@@ -17,10 +17,6 @@ import Device::*;
 interface Merger;
    interface Vector#(Degree, Put#(Packet)) putPacket;
    interface Get#(Packet) getPacket;
-//   method Action pushPacket0(Packet inputPacket);
-//   method Action pushPacket1(Packet inputPacket);
-//   method Action pushPacket2(Packet inputPacket);
-//   method ActionValue#(Packet) popPacket();
 endinterface
 
 (* synthesize *)
@@ -50,16 +46,6 @@ module mkMerger (Merger);
       endrule
    end
    
-//   rule arbitrate;
-//      if(inFIFO[0].notEmpty()) begin
-//        outFIFO.enq(inFIFO[0].first()); inFIFO[0].deq();
-//      end else if(inFIFO[1].notEmpty()) begin
-//        outFIFO.enq(inFIFO[1].first()); inFIFO[1].deq();
-//      end else if(inFIFO[2].notEmpty()) begin
-//        outFIFO.enq(inFIFO[2].first()); inFIFO[2].deq();
-//      end
-//   endrule
-
    // ----------------
    // METHODS
    Vector#(Degree, Put#(Packet)) putPacketI;

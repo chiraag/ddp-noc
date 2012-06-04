@@ -8,28 +8,26 @@ import Vector::*;
 import FIFO::*;
 
 import NoCTypes::*;
-import Device::*;
 import Merger::*;
 import Router::*;
 
 // ----------------------------------------------------------------
 // Priority model
 
-interface Node;
+interface PNode;
   interface Vector#(Degree, Put#(Packet)) putPacket;
   interface Vector#(Degree, Get#(Packet)) getPacket;
+  
+  interface Put#(Packet) putPacketNode;
+  interface Get#(Packet) getPacketNode;
 endinterface
 
 (* synthesize *)
-module mkNodeP #(Address thisAddr) (Node);
+module mkNodeP #(Address thisAddr) (PNode);
 
    // ---- Instruction memory (modeled here using an array of registers)
    Merger  merger  <- mkMerger();
    Router  router  <- mkRouter(thisAddr, Point);
-   Device  dev     <- mkDevice(thisAddr);
-
-   mkConnection(dev.getPacket, router.putPacket);
-   mkConnection(merger.getPacket, dev.putPacket);
 
    FIFO#(Packet) networkoutFIFO[valueOf(Degree)];
    FIFO#(Packet) networkinFIFO[valueOf(Degree)];
@@ -54,9 +52,17 @@ module mkNodeP #(Address thisAddr) (Node);
    end 
    interface getPacket = getPacketI;
    interface putPacket = putPacketI;
+   interface getPacketNode = merger.getPacket;
+   interface putPacketNode = router.putPacket;
 endmodule: mkNodeP
 
-module mkNodeL #(Address thisAddr) (Node);
+interface LNode;
+  interface Vector#(Degree, Put#(Packet)) putPacket;
+  interface Vector#(Degree, Get#(Packet)) getPacket;
+endinterface
+
+(* synthesize *)
+module mkNodeL #(Address thisAddr) (LNode);
 
    // ---- Instruction memory (modeled here using an array of registers)
    Merger  merger  <- mkMerger();

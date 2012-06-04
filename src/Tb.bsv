@@ -17,15 +17,18 @@ import Router::*;
 (* synthesize *)
 module mkTb (Empty);
    Reg#(UInt#(32)) ldIndex <- mkReg (0);
-   Node nodeP[valueOf(TotalNodes)];
-   Node nodeL[valueOf(TotalNodes)];
+   PNode nodeP[valueOf(TotalNodes)];
+   LNode nodeL[valueOf(TotalNodes)];
+   Device devices[valueOf(TotalNodes)];
    
    for(Address i = 0; i < fromInteger(valueOf(TotalNodes)); i = i+1) begin
-      nodeP[i] <- mkNodeP(i);
-      nodeL[i] <- mkNodeL(i);
+      nodeP[i] <- mkNodeP(i); nodeL[i] <- mkNodeL(i);
+      devices[i] <- mkDevice(i);
    end
    
    for(Integer i = 0; i < valueOf(TotalNodes); i = i+1) begin
+      mkConnection(devices[i].getPacket, nodeP[i].putPacketNode);
+      mkConnection(nodeP[i].getPacketNode, devices[i].putPacket);
       for(Integer j = 0; j < valueOf(Degree); j = j+1) begin
         mkConnection(nodeP[i].getPacket[j], nodeL[(i+incidence[j])%valueOf(TotalNodes)].putPacket[j]);
         mkConnection(nodeL[(i+incidence[j])%valueOf(TotalNodes)].getPacket[j], nodeP[i].putPacket[j]);

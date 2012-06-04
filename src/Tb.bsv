@@ -16,10 +16,11 @@ import Router::*;
 
 (* synthesize *)
 module mkTb (Empty);
-   Reg#(UInt#(32)) ldIndex <- mkReg (0);
    PNode nodeP[valueOf(TotalNodes)];
    LNode nodeL[valueOf(TotalNodes)];
    Device devices[valueOf(TotalNodes)];
+   
+   Reg#(UInt#(32)) cyc <- mkReg(0);
    
    for(Address i = 0; i < fromInteger(valueOf(TotalNodes)); i = i+1) begin
       nodeP[i] <- mkNodeP(i); nodeL[i] <- mkNodeL(i);
@@ -34,6 +35,12 @@ module mkTb (Empty);
         mkConnection(nodeL[(i+incidence[j])%valueOf(TotalNodes)].getPacket[j], nodeP[i].putPacket[j]);
       end
    end
+   
+   rule cycCounter;
+      cyc <= cyc + 1;
+      $display("--Cycle %d--",cyc);
+      if(cyc == 100) $finish();
+   endrule
 endmodule: mkTb
 
 endpackage: Tb

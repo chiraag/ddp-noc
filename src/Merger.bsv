@@ -44,12 +44,19 @@ module mkMerger (Merger);
    endrule
 
    // Generate n rules; each rule forwards from one input FIFO to the common output FIFO
-   for (Integer i = 0; i < valueof(Degree); i = i + 1) begin
-      rule getArbiterRespToken(rrArbiter.clients[i].grant);    // NOTE: rule conditioned on arbiter 'grant'
-//        $display("Arbiter Grant: FIFO %d", i);
-        outFIFO.enq(inFIFO[i].first()); inFIFO[i].deq ();         
-      endrule
-   end
+   Rules arbiterRespRuleSet = emptyRules; 
+   for (Integer i=0; i<valueof(Degree); i=i+1) begin 
+      Rules nextRule = 
+        rules 
+          rule getArbiterRespToken(rrArbiter.clients[i].grant);    // NOTE: rule conditioned on arbiter 'grant'
+//            $display("Arbiter Grant: FIFO %d", i);
+            outFIFO.enq(inFIFO[i].first()); inFIFO[i].deq ();         
+          endrule
+        endrules; 
+      arbiterRespRuleSet = rJoinMutuallyExclusive(arbiterRespRuleSet,nextRule); 
+   end 
+   addRules(arbiterRespRuleSet);
+
    
    // ----------------
    // METHODS

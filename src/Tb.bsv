@@ -39,7 +39,7 @@ module mkTb (Empty);
    rule cycCounter;
       cyc <= cyc + 1;
       $display("--Cycle %d--",cyc);
-      if(cyc == 100) $finish();
+      if(cyc == 20) $finish();
    endrule
 endmodule: mkTb
 

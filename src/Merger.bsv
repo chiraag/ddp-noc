@@ -6,6 +6,7 @@ import GetPut::*;
 import Vector::*;
 import FIFOF::*;
 import FIFO::*;
+import SpecialFIFOs::*;
 import Arbiter::*;
 
 import NoCTypes::*;
@@ -21,10 +22,10 @@ endinterface
 
 (* synthesize *)
 module mkMerger (Merger);
-   FIFO#(Packet) outFIFO <- mkFIFO();
+   FIFO#(Packet) outFIFO <- mkBypassFIFO();
    FIFOF#(Packet) inFIFO[valueOf(Degree)];
    for(Integer i =0; i < valueOf(Degree); i = i+1) begin
-      inFIFO[i]  <- mkSizedFIFOF(16);
+      inFIFO[i]  <- mkSizedBypassFIFOF(16);
    end
    
    // ----------------
@@ -35,14 +36,18 @@ module mkMerger (Merger);
    // Generate arbitration requests (based on data availability on input FIFOs)
    rule putArbiterReqTokens;
       for (Integer i = 0; i < valueof(Degree); i = i + 1) begin
-         if (inFIFO[i].notEmpty) rrArbiter.clients[i].request;
+        if (inFIFO[i].notEmpty) begin
+          rrArbiter.clients[i].request;
+//          $display("Arbiter Req: FIFO %d", i);
+        end
       end
    endrule
 
    // Generate n rules; each rule forwards from one input FIFO to the common output FIFO
    for (Integer i = 0; i < valueof(Degree); i = i + 1) begin
       rule getArbiterRespToken(rrArbiter.clients[i].grant);    // NOTE: rule conditioned on arbiter 'grant'
-         outFIFO.enq(inFIFO[i].first()); inFIFO[i].deq ();         
+//        $display("Arbiter Grant: FIFO %d", i);
+        outFIFO.enq(inFIFO[i].first()); inFIFO[i].deq ();         
       endrule
    end
    

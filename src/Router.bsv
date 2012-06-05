@@ -5,6 +5,7 @@ package Router;
 import GetPut::*;
 import Vector::*;
 import FIFO::*;
+import SpecialFIFOs::*;
 
 import NoCTypes::*;
 import Device::*;
@@ -23,10 +24,10 @@ endinterface
 (* synthesize *)
 module mkRouter #(Address thisAddr, RouterType thisType) (Router);
    // ---- Instruction memory (modeled here using an array of registers)
-   FIFO#(Packet) inFIFO <- mkFIFO();
+   FIFO#(Packet) inFIFO <- mkBypassFIFO();
    FIFO#(Packet) outFIFO[valueOf(Degree)];
    for(Integer i =0; i < valueOf(Degree); i=i+1) begin
-      outFIFO[i]  <- mkFIFO();
+      outFIFO[i]  <- mkBypassFIFO();
    end
    
    // ----------------

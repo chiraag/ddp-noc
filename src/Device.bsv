@@ -5,6 +5,8 @@ package Device;
 import GetPut::*;
 import Vector::*;
 import FIFO::*;
+import SpecialFIFOs::*;
+
 
 import NoCTypes::*;
 
@@ -31,8 +33,8 @@ endinterface
 module mkDevice #(Address thisAddr) (Device);
 
    // ---- Instruction memory (modeled here using an array of registers)
-   FIFO#(Packet) inFIFO  <- mkSizedFIFO(16);
-   FIFO#(Packet) outFIFO <- mkSizedFIFO(16);
+   FIFO#(Packet) inFIFO  <- mkBypassFIFO();
+   FIFO#(Packet) outFIFO <- mkBypassFIFO();
 
    Reg#(UInt#(32)) ldIndex <- mkReg (0);
 

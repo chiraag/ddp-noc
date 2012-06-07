@@ -6,20 +6,10 @@ import GetPut::*;
 import Vector::*;
 import FIFO::*;
 import SpecialFIFOs::*;
-
+import Randomizable::*;
 
 import NoCTypes::*;
-
-// ----------------------------------------------------------------
-// Basic Type Definitions
-Packet ldData[4] = {
-  Packet{destAddress: 3, payloadData: 32'h00000001},
-  Packet{destAddress: 6, payloadData: 32'h00000010},
-  Packet{destAddress: 1, payloadData: 32'h00000100},
-  Packet{destAddress: 2, payloadData: 32'h00001000}
-  };
-
-UInt#(32) arrSize = 4;
+typedef UInt#(8) Prob;
 
 // ----------------------------------------------------------------
 // Device model
@@ -27,6 +17,7 @@ UInt#(32) arrSize = 4;
 interface Device;
    interface Put#(Packet) putPacket;
    interface Get#(Packet) getPacket;
+   method Action init;
 endinterface
 
 (* synthesize *)
@@ -35,16 +26,21 @@ module mkDevice #(Address thisAddr) (Device);
    // ---- Instruction memory (modeled here using an array of registers)
    FIFO#(Packet) inFIFO  <- mkBypassFIFO();
    FIFO#(Packet) outFIFO <- mkBypassFIFO();
-
-   Reg#(UInt#(32)) ldIndex <- mkReg (0);
+   Reg#(Bool) devInit <- mkReg(False);
+   Reg#(Data) dataBase <- mkReg(0);
+   Randomize#(Address) destRnd <- mkConstrainedRandomizer(0,fromInteger(valueOf(TotalNodes)-1));
+   Randomize#(Prob)    probRnd <- mkConstrainedRandomizer(0,100);
+   
+   Prob sendProb = 75;
 
    // ----------------
    // RULES
-   rule setupDevice (ldIndex < arrSize);
-      let outPacket = ldData[ldIndex];
-      outPacket.destAddress = (outPacket.destAddress + thisAddr) % fromInteger(valueOf(TotalNodes));
-      outFIFO.enq(outPacket);
-      ldIndex <= ldIndex + 1;
+   rule setupDevice(devInit);
+      let rndAddr <- destRnd.next();
+      let rndProb <- probRnd.next();
+      Packet outPacket = Packet{destAddress: rndAddr, payloadData: (dataBase + unpack(extend(pack(thisAddr))))};
+      if(rndProb <= sendProb && (rndAddr != thisAddr)) outFIFO.enq(outPacket);
+      dataBase <= dataBase + 32'h00010000;
    endrule
    
    rule offLoadDevice;
@@ -56,6 +52,11 @@ module mkDevice #(Address thisAddr) (Device);
    // METHODS
    interface putPacket = toPut(inFIFO);
    interface getPacket = toGet(outFIFO);
+   method Action init() if(!devInit);
+      destRnd.cntrl.init(); 
+      probRnd.cntrl.init();
+      devInit <= True;       
+   endmethod
 
 endmodule: mkDevice
 

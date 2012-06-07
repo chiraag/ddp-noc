@@ -16,6 +16,9 @@ import Router::*;
 
 (* synthesize *)
 module mkTb (Empty);
+   Reg#(Bool) initialized <- mkReg(False); 
+
+
    PNode nodeP[valueOf(TotalNodes)];
    LNode nodeL[valueOf(TotalNodes)];
    Device devices[valueOf(TotalNodes)];
@@ -36,7 +39,14 @@ module mkTb (Empty);
       end
    end
    
-   rule cycCounter;
+   rule init (!initialized);
+     for(Address i = 0; i < fromInteger(valueOf(TotalNodes)); i = i+1) begin
+        devices[i].init();
+     end
+     initialized <= True; 
+   endrule
+
+   rule cycCounter(initialized);
       cyc <= cyc + 1;
       $display("--Cycle %d--",cyc);
       if(cyc == 20) $finish();

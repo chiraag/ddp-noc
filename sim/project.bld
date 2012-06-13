@@ -1,23 +1,48 @@
 [DEFAULT]
-default-targets:     bsim_dut
+default-targets:     bsim_scemi_dut tb
 bsc-compile-options: -aggressive-conditions -keep-fires
 bsc-link-options:    -keep-fires
 
 [common]
 hide-target
-bsv-source-directories:  ../src
+bsv-source-directories:  ../src ../scemi
 verilog-directory:     vlog_dut
 binary-directory:      bdir_dut
 simulation-directory:  simdir_dut
 info-directory:        info_dut
-top-module:            mkTb
-top-file:              ../src/Tb.bsv
+altera-directory:      quartus
+xilinx-directory:      xilinx
 
 [dut]
 hide-target
 extends-target: common
+top-module:     mkTb
+top-file:       ../src/Tb.bsv
 
-[bsim_dut]
+[bsim_direct_dut]
 extends-target: dut
 build-for:      bluesim
-exe-file:       bsim_dut
+exe-file:       bsim_direct_dut
+
+[scemi_dut]
+hide-target
+extends-target: common
+top-module:     mkBridge
+top-file:       ../scemi/Bridge.bsv
+scemi-parameters-file: scemi.params
+
+[bsim_scemi_dut]
+extends-target: scemi_dut
+build-for:      bluesim
+scemi-type:     TCP
+scemi-tcp-port: 3375
+exe-file:       bsim_scemi_dut
+
+[tb]
+extends-target: scemi_dut
+scemi-tb
+build-for: c++
+c++-header-directory: tbinclude
+c++-header-aliases
+c++-files: ../tb/TestBench.cpp ../tb/ResetXactor.cpp
+exe-file: tb

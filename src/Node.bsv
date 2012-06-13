@@ -15,11 +15,11 @@ import Router::*;
 // Priority model
 
 interface PNode;
-  interface Vector#(Degree, Put#(Packet)) putPacket;
-  interface Vector#(Degree, Get#(Packet)) getPacket;
+  interface Vector#(Degree, Put#(NoCPacket)) putPacket;
+  interface Vector#(Degree, Get#(NoCPacket)) getPacket;
   
-  interface Put#(Packet) putPacketNode;
-  interface Get#(Packet) getPacketNode;
+  interface Put#(NoCPacket) putPacketNode;
+  interface Get#(NoCPacket) getPacketNode;
 endinterface
 
 (* synthesize *)
@@ -37,8 +37,8 @@ module mkNodeP #(Address thisAddr) (PNode);
 endmodule: mkNodeP
 
 interface LNode;
-  interface Vector#(Degree, Put#(Packet)) putPacket;
-  interface Vector#(Degree, Get#(Packet)) getPacket;
+  interface Vector#(Degree, Put#(NoCPacket)) putPacket;
+  interface Vector#(Degree, Get#(NoCPacket)) getPacket;
 endinterface
 
 (* synthesize *)

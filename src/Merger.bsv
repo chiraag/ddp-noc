@@ -16,16 +16,16 @@ import Device::*;
 // Priority model
 
 interface Merger;
-   interface Vector#(Degree, Put#(Packet)) putPacket;
-   interface Get#(Packet) getPacket;
+   interface Vector#(Degree, Put#(NoCPacket)) putPacket;
+   interface Get#(NoCPacket) getPacket;
 endinterface
 
 (* synthesize *)
 module mkMerger (Merger);
-   FIFO#(Packet) outFIFO <- mkBypassFIFO();
-   FIFOF#(Packet) inFIFO[valueOf(Degree)];
+   FIFO#(NoCPacket) outFIFO <- mkBypassFIFO();
+   FIFOF#(NoCPacket) inFIFO[valueOf(Degree)];
    for(Integer i =0; i < valueOf(Degree); i = i+1) begin
-      inFIFO[i]  <- mkSizedBypassFIFOF(16);
+      inFIFO[i]  <- mkSizedBypassFIFOF(4);
    end
    
    // ----------------
@@ -38,7 +38,7 @@ module mkMerger (Merger);
       for (Integer i = 0; i < valueof(Degree); i = i + 1) begin
         if (inFIFO[i].notEmpty) begin
           rrArbiter.clients[i].request;
-//          $display("Arbiter Req: FIFO %d", i);
+//          $display("Arbiter Req: FIFO %d %d %x", i, inFIFO[i].first().destAddress, inFIFO[i].first().payloadData);
         end
       end
    endrule
@@ -49,7 +49,7 @@ module mkMerger (Merger);
       Rules nextRule = 
         rules 
           rule getArbiterRespToken(rrArbiter.clients[i].grant);    // NOTE: rule conditioned on arbiter 'grant'
-//            $display("Arbiter Grant: FIFO %d", i);
+//            $display("Arbiter Grant: FIFO %d %d %x", i, inFIFO[i].first().destAddress, inFIFO[i].first().payloadData);
             outFIFO.enq(inFIFO[i].first()); inFIFO[i].deq ();         
           endrule
         endrules; 
@@ -60,7 +60,7 @@ module mkMerger (Merger);
    
    // ----------------
    // METHODS
-   Vector#(Degree, Put#(Packet)) putPacketI;
+   Vector#(Degree, Put#(NoCPacket)) putPacketI;
    for (Integer i=0; i<valueOf(Degree); i=i+1) begin
       putPacketI[i] = toPut(inFIFO[i]);
    end 

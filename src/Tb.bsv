@@ -49,7 +49,19 @@ module mkTb (Empty);
    rule cycCounter(initialized);
       cyc <= cyc + 1;
       $display("--Cycle %d--",cyc);
-      if(cyc == 20) $finish();
+   endrule
+   
+   rule fini (initialized);
+      Vector#(TotalNodes, UInt#(32)) devRXVal;
+      for(Integer i=0; i<valueOf(TotalNodes); i=i+1) begin
+        devRXVal[i] = devices[i].rxVal;
+      end
+      UInt#(32) nextRXVal = fold(\+ , devRXVal);
+      
+      if(nextRXVal > fromInteger(valueOf(TotalNodes))*txNodeLimit) begin
+        initialized <= False;
+        $finish();
+      end
    endrule
 endmodule: mkTb
 

@@ -16,7 +16,11 @@ typedef Bit#(DataWidth)    Data;
 typedef struct {
   Address destAddress;
   Data    payloadData;
-  } Packet deriving(Bits);
+  } NoCPacket deriving(Bits);
 
+// Simulation Settings
+UInt#(32) txNodeLimit = 100;
 
-
+typedef UInt#(8) Prob;
+Prob sendProb = 50;
+Prob sendProbFPGA = 128;

@@ -17,15 +17,15 @@ typedef enum {Point, Line} RouterType deriving (Eq, Bits);
 // Priority model
 
 interface Router;
-  interface Put#(Packet) putPacket;
-  interface Vector#(Degree, Get#(Packet)) getPacket;
+  interface Put#(NoCPacket) putPacket;
+  interface Vector#(Degree, Get#(NoCPacket)) getPacket;
 endinterface
 
 (* synthesize *)
 module mkRouter #(Address thisAddr, RouterType thisType) (Router);
    // ---- Instruction memory (modeled here using an array of registers)
-   FIFO#(Packet) inFIFO <- mkBypassFIFO();
-   FIFO#(Packet) outFIFO[valueOf(Degree)];
+   FIFO#(NoCPacket) inFIFO <- mkBypassFIFO();
+   FIFO#(NoCPacket) outFIFO[valueOf(Degree)];
    for(Integer i =0; i < valueOf(Degree); i=i+1) begin
       outFIFO[i]  <- mkBypassFIFO();
    end
@@ -35,7 +35,12 @@ module mkRouter #(Address thisAddr, RouterType thisType) (Router);
    rule routeOutgoing;
       let currPacket = inFIFO.first(); inFIFO.deq();
       Integer totalNodes = (valueOf(TotalNodes));
-      Address distance = ((fromInteger(totalNodes) + currPacket.destAddress - thisAddr) % fromInteger(totalNodes));
+      Address distance = 0;
+      if(currPacket.destAddress >= thisAddr) begin
+        distance = currPacket.destAddress - thisAddr;
+      end else begin
+        distance  = fromInteger(totalNodes) + currPacket.destAddress - thisAddr;
+      end
       DecodedAddr toAddr = (1 << distance);
 
       // (0, 6, 4) (1, 0, 5) (3, 2, 0)
@@ -50,12 +55,12 @@ module mkRouter #(Address thisAddr, RouterType thisType) (Router);
         if(thisType == Point) begin
           if((toAddr & pointPattern) != 0) begin 
             outFIFO[i].enq(currPacket);
-            $display("Point:%d Dest %d Pattern %b", thisAddr, currPacket.destAddress, pointPattern);
+//            $display("Point:%d Dest %d Pattern %b", thisAddr, currPacket.destAddress, pointPattern);
           end
         end else if(thisType == Line) begin
           if(toAddr == linePattern) begin
             outFIFO[i].enq(currPacket);
-            $display("Line:%d Dest %d Pattern %b", thisAddr, currPacket.destAddress, linePattern);
+//            $display("Line:%d Dest %d Pattern %b", thisAddr, currPacket.destAddress, linePattern);
           end
         end        
       end
@@ -63,7 +68,7 @@ module mkRouter #(Address thisAddr, RouterType thisType) (Router);
 
    // ----------------
    // METHODS
-   Vector#(Degree, Get#(Packet)) getPacketI;
+   Vector#(Degree, Get#(NoCPacket)) getPacketI;
    for (Integer i=0; i<valueOf(Degree); i=i+1) begin
       getPacketI[i] = toGet(outFIFO[i]);
    end 
